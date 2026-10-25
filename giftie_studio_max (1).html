@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Giftie Studio Max 🎁 - Buat Kado Virtual Interaktif</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Plus+Jakarta+Sans:ital,wght@0,400;0,600;0,700;0,800;1,500&family=Dancing+Script:wght@700&family=Press+Start+2P&display=swap" rel="stylesheet">
+  
+  <!-- External JS Libraries (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- YouTube Iframe API -->
+  <script src="https://www.youtube.com/iframe_api"></script>
+
+  <style>
+    /* Global Typography & Scrollbars */
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      overflow-x: hidden;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .font-heading { font-family: 'Fredoka', cursive; }
+    .font-handwriting { font-family: 'Dancing Script', cursive; }
+    .font-pixel { font-family: 'Press Start 2P', monospace; }
+
+    /* Custom Theme Definitions */
+    body.theme-pastel {
+      background: linear-gradient(135deg, #ffd1dc 0%, #e0c3fc 50%, #8ec5fc 100%);
+      color: #334155;
+    }
+    body.theme-coquette {
+      background: linear-gradient(135deg, #fff0f5 0%, #ffc0cb 50%, #ffe4e1 100%);
+      color: #4a0e17;
+    }
+    body.theme-sakura {
+      background: linear-gradient(135deg, #ffb7c5 0%, #ffe4e1 50%, #fff5f5 100%);
+      color: #5c2233;
+    }
+    body.theme-cyber {
+      background: linear-gradient(135deg, #0d0221 0%, #0f0c20 50%, #26082c 100%);
+      color: #f8fafc;
+    }
+    body.theme-retro {
+      background: linear-gradient(135deg, #3d5a80 0%, #98c1d9 50%, #e0fbfc 100%);
+      color: #1d2d44;
+    }
+    body.theme-midnight {
+      background: linear-gradient(135deg, #0b132b 0%, #1c2541 50%, #3a506b 100%);
+      color: #f1f5f9;
+    }
+
+    /* Glassmorphism Styles */
+    .glass-panel {
+      background: rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 2px solid rgba(255, 255, 255, 0.8);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+    }
+    body.theme-cyber .glass-panel, body.theme-midnight .glass-panel {
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Particle Background Layer */
+    #particleContainer {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .particle {
+      position: absolute;
+      bottom: -40px;
+      animation: floatUp 12s linear infinite;
+      opacity: 0.7;
+    }
+    @keyframes floatUp {
+      0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(-110vh) rotate(360deg); opacity: 0; }
+    }
+
+    /* 3D Gift Box Unboxing Animation */
+    .gift-box-wrapper {
+      perspective: 1000px;
+      cursor: pointer;
+    }
+    .gift-box-lid {
+      transition: transform 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55), opacity 0.5s ease;
+      transform-origin: top center;
+    }
+    .gift-box-wrapper.opened .gift-box-lid {
+      transform: translateY(-120px) rotateX(-45deg) scale(0.9);
+      opacity: 0;
+    }
+    .gift-box-body {
+      transition: transform 0.5s ease;
+    }
+    .gift-box-wrapper.opened .gift-box-body {
+      transform: translateY(30px) scale(0.95);
+    }
+
+    /* Wax Seal Envelope Animation */
+    .envelope-box {
+      perspective: 800px;
+    }
+    .envelope-flap {
+      transform-origin: top;
+      transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .envelope-box.open .envelope-flap {
+      transform: rotateX(180deg);
+      z-index: 1;
+    }
+    .wax-seal {
+      transition: transform 0.4s ease, opacity 0.4s ease;
+    }
+    .envelope-box.open .wax-seal {
+      transform: scale(1.5);
+      opacity: 0;
+    }
+    .letter-paper {
+      transition: transform 0.8s ease 0.3s;
+    }
+    .envelope-box.open .letter-paper {
+      transform: translateY(-130px);
+      z-index: 10;
+    }
+
+    /* Scratch Canvas Overlay */
+    #scratchCanvas {
+      touch-action: none;
+      border-radius: 1.25rem;
+    }
+
+    /* Floating & Pulse Micro Animations */
+    @keyframes floatSoft {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    .animate-float { animation: floatSoft 3s infinite ease-in-out; }
+
+    @keyframes glowPulse {
+      0%, 100% { filter: drop-shadow(0 0 8px rgba(244, 114, 182, 0.6)); }
+      50% { filter: drop-shadow(0 0 24px rgba(244, 114, 182, 0.95)); }
+    }
+    .animate-glow { animation: glowPulse 2s infinite ease-in-out; }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); }
+    ::-webkit-scrollbar-thumb { background: rgba(244, 114, 182, 0.5); border-radius: 99px; }
+  </style>
+</head>
+<body class="theme-pastel min-h-screen relative flex flex-col justify-between" id="appBody">
+
+  <!-- Background Animated Particle Container -->
+  <div id="particleContainer"></div>
+
+  <!-- HEADER NAVBAR -->
+  <header class="relative z-20 w-full px-6 py-4 max-w-7xl mx-auto flex justify-between items-center">
+    <div class="flex items-center gap-3 cursor-pointer" onclick="goHome()">
+      <div class="bg-gradient-to-tr from-pink-500 to-rose-400 text-white p-3 rounded-2xl shadow-lg transform -rotate-6 hover:rotate-0 transition-all duration-300">
+        <i data-lucide="gift" class="w-6 h-6"></i>
+      </div>
+      <div>
+        <h1 class="font-heading text-2xl sm:text-3xl font-extrabold tracking-wide bg-gradient-to-r from-pink-600 to-rose-500 bg-clip-text text-transparent">
+          Giftie<span class="text-rose-400 font-normal">.Studio</span>
+        </h1>
+        <p class="text-[10px] font-bold tracking-widest uppercase opacity-75">Interactive Virtual Surprise</p>
+      </div>
+    </div>
+
+    <!-- Right Controls -->
+    <div class="flex items-center gap-3">
+      <!-- YouTube Audio Floating Controller Widget -->
+      <div id="ytAudioPlayerWidget" class="hidden glass-panel px-3 py-1.5 rounded-full flex items-center gap-2 shadow-md">
+        <button onclick="toggleYTAudio()" id="ytPlayBtn" class="w-8 h-8 rounded-full bg-pink-500 hover:bg-pink-600 text-white flex items-center justify-center transition-all shadow">
+          <i data-lucide="music" class="w-4 h-4"></i>
+        </button>
+        <div class="hidden sm:flex flex-col text-left max-w-[120px]">
+          <span class="text-[10px] font-bold text-pink-600 truncate" id="ytSongTitle">Lagu YouTube</span>
+          <span class="text-[9px] opacity-75 truncate" id="ytStatus">Memutar Audio...</span>
+        </div>
+        <input type="range" id="ytVolumeSlider" min="0" max="100" value="80" onchange="changeYTVolume(this.value)" class="w-16 accent-pink-500 hidden sm:block">
+      </div>
+
+      <button onclick="goHome()" id="navNewGiftBtn" class="hidden sm:flex items-center gap-2 bg-gradient-to-r from-pink-500 to-rose-400 text-white font-bold px-4 py-2 rounded-full shadow-lg hover:shadow-pink-400/50 hover:scale-105 transition-all text-xs">
+        <i data-lucide="plus" class="w-4 h-4"></i> Buat Kado Baru
+      </button>
+    </div>
+  </header>
+
+  <!-- HIDDEN YOUTUBE IFRAME CONTAINER -->
+  <div class="hidden">
+    <div id="youtube-player"></div>
+  </div>
+
+  <!-- MAIN APP CONTAINER -->
+  <main class="relative z-10 container mx-auto px-4 py-6 flex-grow flex flex-col justify-center items-center">
+
+    <!-- ==================== MODE 1: RECIPIENT SURPRISE VIEWER ==================== -->
+    <section id="recipientSection" class="w-full max-w-2xl mx-auto hidden flex-col items-center justify-center text-center">
+      
+      <!-- LOCK SCREEN (If Passcode Protected) -->
+      <div id="passcodeLockScreen" class="hidden glass-panel p-8 rounded-3xl w-full max-w-md shadow-2xl space-y-4">
+        <div class="w-16 h-16 bg-pink-100 text-pink-500 rounded-full flex items-center justify-center mx-auto text-2xl animate-bounce">
+          🔒
+        </div>
+        <h3 class="font-heading text-2xl font-bold">Kado Ini Dilindungi Sandi</h3>
+        <p class="text-xs opacity-75">Masukkan kode PIN rahasia dari pengirim untuk membukanya!</p>
+        <input type="password" id="inputPasscodeAttempt" placeholder="Masukkan Kode PIN" class="w-full text-center tracking-widest font-mono text-lg py-3 rounded-2xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-pink-400">
+        <button onclick="verifyPasscode()" class="w-full bg-pink-500 hover:bg-pink-600 text-white font-bold py-3 rounded-2xl shadow-lg transition-all text-sm">
+          Buka Kado ✨
+        </button>
+      </div>
+
+      <!-- TIMER LOCK SCREEN (If Countdown Set) -->
+      <div id="countdownLockScreen" class="hidden glass-panel p-8 rounded-3xl w-full max-w-md shadow-2xl space-y-4">
+        <div class="w-16 h-16 bg-amber-100 text-amber-500 rounded-full flex items-center justify-center mx-auto text-2xl animate-spin">
+          ⏳
+        </div>
+        <h3 class="font-heading text-2xl font-bold">Kado Belum Boleh Dibuka!</h3>
+        <p class="text-xs opacity-75">Kado ini baru bisa dibuka pada tanggal yang dijadwalkan:</p>
+        <div id="countdownTimerDisplay" class="font-pixel text-xl text-pink-600 py-3 bg-white/50 rounded-2xl shadow-inner">
+          00d : 00h : 00m : 00s
+        </div>
+      </div>
+
+      <!-- ACTIVE SURPRISE DISPLAY -->
+      <div id="surpriseMainContent" class="w-full flex flex-col items-center">
+        
+        <!-- Recipient Header -->
+        <div class="mb-6 animate-float space-y-2">
+          <span id="viewOccasionTag" class="inline-block px-4 py-1.5 rounded-full bg-white/90 text-pink-600 font-bold text-xs shadow-md">
+            🎉 Special Surprise
+          </span>
+          <h2 id="viewTitle" class="font-heading text-3xl sm:text-5xl font-extrabold tracking-tight drop-shadow-sm">
+            Ada Kejutan Untukmu!
+          </h2>
+          <p id="viewSender" class="text-sm sm:text-base font-semibold opacity-90">
+            Dari: <span class="text-pink-600 font-bold">Seseorang</span>
+          </p>
+        </div>
+
+        <!-- UNBOXING INTERACTIVE AREA -->
+        <div id="unboxingContainer" class="w-full min-h-[340px] flex items-center justify-center my-4">
+          
+          <!-- TYPE 1: 3D GIFT BOX -->
+          <div id="giftTypeBox" class="gift-box-wrapper flex flex-col items-center" onclick="openGiftBox()">
+            <div class="relative w-56 h-56 flex items-center justify-center animate-glow">
+              <!-- Lid -->
+              <div class="gift-box-lid absolute top-4 z-20 w-52 h-16 bg-gradient-to-r from-rose-500 to-pink-500 rounded-2xl shadow-xl flex items-center justify-center border-4 border-white/60">
+                <div class="w-full h-6 bg-yellow-300 border-y-2 border-yellow-400"></div>
+                <!-- Bow -->
+                <div class="absolute -top-8 flex justify-center items-center">
+                  <div class="w-12 h-12 border-4 border-yellow-400 bg-yellow-300 rounded-full transform -rotate-45 shadow-lg"></div>
+                  <div class="w-12 h-12 border-4 border-yellow-400 bg-yellow-300 rounded-full transform rotate-45 -ml-5 shadow-lg"></div>
+                </div>
+              </div>
+              <!-- Box Body -->
+              <div class="gift-box-body absolute bottom-4 z-10 w-48 h-40 bg-gradient-to-r from-rose-400 to-pink-400 rounded-b-3xl shadow-2xl flex items-center justify-center border-4 border-white/60">
+                <div class="w-10 h-full bg-yellow-300 border-x-2 border-yellow-400"></div>
+                <span class="absolute z-10 bg-white/90 text-pink-600 font-heading text-xs font-bold px-3 py-1.5 rounded-full shadow">Klik Untuk Buka! 🎁</span>
+              </div>
+            </div>
+            <p class="text-xs font-bold text-slate-600 mt-4 bg-white/80 px-4 py-2 rounded-full shadow-sm">Ketuk Kotak Kado Untuk Membuka ✨</p>
+          </div>
+
+          <!-- TYPE 2: WAX SEAL ENVELOPE -->
+          <div id="giftTypeLetter" class="hidden flex flex-col items-center">
+            <div class="envelope-box relative w-72 h-48 bg-rose-400 rounded-b-2xl shadow-2xl cursor-pointer flex items-center justify-center border-2 border-rose-300" id="envelopeWrapper" onclick="openWaxEnvelope()">
+              <!-- Flap -->
+              <div class="envelope-flap absolute top-0 inset-x-0 h-28 bg-rose-500 rounded-t-2xl shadow-md border-t-2 border-rose-300 flex justify-center items-center"></div>
+              <!-- Wax Seal -->
+              <div class="wax-seal absolute z-30 w-14 h-14 bg-amber-600 border-4 border-amber-400 rounded-full flex items-center justify-center text-amber-100 font-bold shadow-xl animate-pulse">
+                👑
+              </div>
+              <!-- Letter Paper Inside -->
+              <div class="letter-paper absolute inset-x-4 top-4 bottom-2 bg-amber-50 rounded-xl p-4 shadow-md text-left overflow-hidden border border-amber-200">
+                <div class="w-full h-2 bg-rose-200 rounded mb-2"></div>
+                <div class="w-3/4 h-2 bg-rose-100 rounded mb-4"></div>
+                <p class="text-[10px] text-slate-500 font-handwriting text-base">Surat ucapan khusus di dalam...</p>
+              </div>
+            </div>
+            <p class="text-xs font-bold text-slate-600 mt-6 bg-white/80 px-4 py-2 rounded-full shadow-sm">Ketuk Segel Lilin Untuk Membuka Surat 💌</p>
+          </div>
+
+          <!-- TYPE 3: BIRTHDAY CAKE & BLOW CANDLE -->
+          <div id="giftTypeCake" class="hidden flex flex-col items-center">
+            <div class="relative flex flex-col items-center cursor-pointer group" onclick="blowCandleManual()">
+              <!-- Candle Flame -->
+              <div id="cakeFlame" class="w-6 h-10 bg-gradient-to-t from-yellow-500 via-amber-400 to-yellow-100 rounded-full animate-pulse shadow-xl transform -translate-y-2"></div>
+              <!-- Candle Body -->
+              <div class="w-4 h-12 bg-gradient-to-b from-pink-400 to-rose-500 rounded-t-sm shadow-sm border-x border-white/50"></div>
+              <!-- Cake Top Layer -->
+              <div class="w-52 h-24 bg-gradient-to-r from-pink-300 via-rose-200 to-pink-300 rounded-t-3xl border-b-8 border-yellow-100 relative flex items-center justify-center shadow-xl">
+                <!-- Frosting Loops -->
+                <div class="absolute -top-3 inset-x-0 flex justify-around">
+                  <div class="w-7 h-7 bg-white rounded-full"></div>
+                  <div class="w-7 h-7 bg-white rounded-full"></div>
+                  <div class="w-7 h-7 bg-white rounded-full"></div>
+                  <div class="w-7 h-7 bg-white rounded-full"></div>
+                </div>
+                <span class="font-heading font-bold text-pink-600 text-sm mt-3">Tiup Lilin Ultah 🎂</span>
+              </div>
+              <!-- Cake Bottom Base -->
+              <div class="w-60 h-8 bg-amber-800/30 rounded-full -mt-2"></div>
+            </div>
+            <div class="flex flex-col sm:flex-row gap-2 mt-6">
+              <button onclick="enableMicBlow()" class="text-xs font-bold bg-white/90 hover:bg-white text-pink-600 px-4 py-2 rounded-full shadow-sm flex items-center justify-center gap-1.5">
+                <i data-lucide="mic" class="w-3.5 h-3.5"></i> Tiup Pakai Mikrofon HP
+              </button>
+              <button onclick="blowCandleManual()" class="text-xs font-bold bg-pink-500 hover:bg-pink-600 text-white px-4 py-2 rounded-full shadow-sm">
+                Ketuk Untuk Tiup 🕯️
+              </button>
+            </div>
+          </div>
+
+          <!-- TYPE 4: SCRATCH CARD CANVAS -->
+          <div id="giftTypeScratch" class="hidden flex flex-col items-center w-full max-w-sm">
+            <div class="relative w-full h-64 rounded-3xl overflow-hidden shadow-2xl border-4 border-white glass-panel flex items-center justify-center">
+              <div class="absolute inset-0 p-6 flex flex-col items-center justify-center text-center bg-gradient-to-tr from-amber-100 via-rose-100 to-pink-100">
+                <span class="text-3xl mb-2">✨🎉✨</span>
+                <p id="scratchRevealedText" class="font-bold text-slate-800 text-base sm:text-lg leading-relaxed"></p>
+              </div>
+              <canvas id="scratchCanvas" class="absolute inset-0 w-full h-full z-10 cursor-pointer"></canvas>
+            </div>
+            <p class="text-xs font-bold text-slate-600 mt-4 bg-white/80 px-4 py-2 rounded-full shadow-sm">Gosok Layar Menggunakan Jari / Mouse! 🎟️</p>
+          </div>
+
+          <!-- TYPE 5: POP BALLOONS GAME -->
+          <div id="giftTypeBalloon" class="hidden flex flex-wrap justify-center gap-4 py-6">
+            <div onclick="popBalloon(this)" class="balloon-btn cursor-pointer w-20 h-28 bg-gradient-to-t from-pink-400 to-rose-300 rounded-full shadow-lg flex items-center justify-center text-white text-2xl transition-all transform hover:scale-110 animate-float">🎈</div>
+            <div onclick="popBalloon(this)" class="balloon-btn cursor-pointer w-20 h-28 bg-gradient-to-t from-purple-400 to-indigo-300 rounded-full shadow-lg flex items-center justify-center text-white text-2xl transition-all transform hover:scale-110 animate-float" style="animation-delay: 0.4s;">🎈</div>
+            <div onclick="popBalloon(this)" class="balloon-btn cursor-pointer w-20 h-28 bg-gradient-to-t from-sky-400 to-teal-300 rounded-full shadow-lg flex items-center justify-center text-white text-2xl transition-all transform hover:scale-110 animate-float" style="animation-delay: 0.8s;">🎈</div>
+          </div>
+
+          <!-- TYPE 6: POLAROID PHOTO ALBUM -->
+          <div id="giftTypePolaroid" class="hidden flex flex-col items-center" onclick="revealFinalMessage()">
+            <div class="bg-white p-4 pb-8 rounded-xl shadow-2xl border-2 border-slate-100 transform -rotate-2 hover:rotate-0 transition-all cursor-pointer max-w-xs">
+              <!-- Tape decor -->
+              <div class="w-16 h-6 bg-amber-200/60 absolute -top-3 left-1/2 -translate-x-1/2 rotate-3"></div>
+              <img id="polaroidDisplayImg" src="https://images.unsplash.com/photo-1513151233558-d860c5398176?w=500&auto=format&fit=crop" class="w-full h-56 object-cover rounded-lg mb-3 shadow-inner">
+              <p id="polaroidCaptionText" class="font-handwriting text-xl text-slate-700 font-bold">Kenangan Indah Kita ✨</p>
+            </div>
+            <p class="text-xs font-bold text-slate-600 mt-4 bg-white/80 px-4 py-2 rounded-full shadow-sm">Klik Foto Untuk Membuka Pesan Lengkap 📸</p>
+          </div>
+
+        </div>
+
+        <!-- REVEALED FINAL MESSAGE CARD CONTAINER -->
+        <div id="finalMessageModal" class="hidden w-full glass-panel p-6 sm:p-10 rounded-3xl shadow-2xl transition-all duration-700 transform scale-90 opacity-0 mt-4 relative">
+          
+          <!-- Optional Photo Display -->
+          <div id="msgPhotoWrapper" class="hidden mb-6 flex justify-center">
+            <div class="relative bg-white p-3 rounded-2xl shadow-xl transform -rotate-1 border border-slate-100 max-w-sm">
+              <img id="msgPhoto" src="" class="rounded-xl max-h-64 object-cover w-full">
+            </div>
+          </div>
+
+          <h3 id="msgRecipientTitle" class="font-heading text-2xl font-bold text-pink-600 mb-2">Untuk: Nama</h3>
+          <div class="w-16 h-1 bg-gradient-to-r from-pink-400 to-rose-400 mx-auto rounded-full mb-6"></div>
+          
+          <p id="msgBodyText" class="text-slate-700 font-medium text-base sm:text-xl leading-relaxed whitespace-pre-wrap italic">
+            "Pesan ucapan akan muncul di sini..."
+          </p>
+
+          <div class="mt-8 pt-6 border-t border-pink-200/50 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <span id="msgSenderFooter" class="text-xs font-bold text-slate-500">Dari: Sahabatmu</span>
+            
+            <div class="flex gap-2 w-full sm:w-auto">
+              <button onclick="triggerConfettiEffect()" class="flex-1 sm:flex-none bg-yellow-400 hover:bg-yellow-500 text-slate-900 font-bold px-4 py-2.5 rounded-2xl shadow transition-all text-xs flex items-center justify-center gap-1.5">
+                🎉 Letuskan Kembang Api
+              </button>
+              <button onclick="goHome()" class="flex-1 sm:flex-none bg-pink-500 hover:bg-pink-600 text-white font-bold px-4 py-2.5 rounded-2xl shadow transition-all text-xs flex items-center justify-center gap-1.5">
+                🎁 Buat Kado Sendiri
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- ==================== MODE 2: ADVANCED CREATOR STUDIO ==================== -->
+    <section id="creatorSection" class="w-full max-w-5xl mx-auto py-2">
+      
+      <!-- Header Title -->
+      <div class="text-center mb-8">
+        <span class="bg-pink-100 text-pink-600 text-xs font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">Creator Studio Studio</span>
+        <h2 class="font-heading text-3xl sm:text-5xl font-extrabold text-slate-800 mt-2">Racik Kado Virtual Lucu ✨</h2>
+        <p class="text-slate-600 text-xs sm:text-sm mt-1">Lengkapi form di bawah, tambahkan lagu YouTube favorit, lalu bagikan tautannya!</p>
+      </div>
+
+      <!-- GRID LAYOUT BUILDER & PREVIEW -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        
+        <!-- LEFT: FORM CONTROLS (7 Cols) -->
+        <div class="lg:col-span-7 glass-panel p-6 sm:p-8 rounded-3xl space-y-6">
+          
+          <!-- STEP 1: CHOOSE SURPRISE TYPE -->
+          <div>
+            <label class="block font-heading text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
+              <span class="w-6 h-6 bg-pink-500 text-white rounded-full flex items-center justify-center text-xs">1</span>
+              Pilih Jenis Kejutan 🎁
+            </label>
+            <div class="grid grid-cols-3 gap-2.5">
+              <button type="button" onclick="setGiftType('box')" id="btnTypebox" class="type-select-btn p-3 rounded-2xl border-2 border-pink-400 bg-pink-50/50 flex flex-col items-center gap-1">
+                <span class="text-2xl">🎁</span>
+                <span class="text-[11px] font-bold">Kotak Kado 3D</span>
+              </button>
+              <button type="button" onclick="setGiftType('letter')" id="btnTypeletter" class="type-select-btn p-3 rounded-2xl border-2 border-slate-200 hover:border-pink-300 flex flex-col items-center gap-1">
+                <span class="text-2xl">💌</span>
+                <span class="text-[11px] font-bold">Surat Segel</span>
+              </button>
+              <button type="button" onclick="setGiftType('cake')" id="btnTypecake" class="type-select-btn p-3 rounded-2xl border-2 border-slate-200 hover:border-pink-300 flex flex-col items-center gap-1">
+                <span class="text-2xl">🎂</span>
+                <span class="text-[11px] font-bold">Kue & Lilin</span>
+              </button>
+              <button type="button" onclick="setGiftType('scratch')" id="btnTypescratch" class="type-select-btn p-3 rounded-2xl border-2 border-slate-200 hover:border-pink-300 flex flex-col items-center gap-1">
+                <span class="text-2xl">🎟️</span>
+                <span class="text-[11px] font-bold">Kartu Gosok</span>
+              </button>
+              <button type="button" onclick="setGiftType('balloon')" id="btnTypeballoon" class="type-select-btn p-3 rounded-2xl border-2 border-slate-200 hover:border-pink-300 flex flex-col items-center gap-1">
+                <span class="text-2xl">🎈</span>
+                <span class="text-[11px] font-bold">Letus Balon</span>
+              </button>
+              <button type="button" onclick="setGiftType('polaroid')" id="btnTypepolaroid" class="type-select-btn p-3 rounded-2xl border-2 border-slate-200 hover:border-pink-300 flex flex-col items-center gap-1">
+                <span class="text-2xl">📸</span>
+                <span class="text-[11px] font-bold">Album Foto</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- STEP 2: YOUTUBE MUSIC INTEGRATION -->
+          <div class="bg-rose-50/60 p-4 rounded-2xl border border-pink-200/60 space-y-3">
+            <label class="block font-heading text-xs font-bold text-pink-700 flex items-center justify-between">
+              <span class="flex items-center gap-1.5"><i data-lucide="youtube" class="w-4 h-4 text-red-500"></i> Integrasi Musik YouTube (Opsional)</span>
+              <span class="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-bold">Audio AutoPlay</span>
+            </label>
+            <input type="text" id="inputYTUrl" placeholder="Tempel Link YouTube (contoh: https://youtu.be/xxx)" onchange="processYTUrl()" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-pink-400">
+            <p class="text-[10px] text-slate-500">Bisa pakai link lagu romantis atau lagu ulang tahun dari YouTube!</p>
+          </div>
+
+          <!-- STEP 3: MESSAGE DETAILS -->
+          <div class="space-y-4">
+            <label class="block font-heading text-sm font-bold text-slate-700 flex items-center gap-2">
+              <span class="w-6 h-6 bg-pink-500 text-white rounded-full flex items-center justify-center text-xs">2</span>
+              Detail Pesan & Penerima ✍️
+            </label>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1">Nama Penerima</label>
+                <input type="text" id="inputRecipient" placeholder="Misal: Bintang Adinda" oninput="updateLivePreview()" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-pink-400">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1">Nama Pengirim</label>
+                <input type="text" id="inputSender" placeholder="Misal: Teman Rahasiamu" oninput="updateLivePreview()" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-pink-400">
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1">Judul Momen Acara</label>
+              <input type="text" id="inputOccasion" placeholder="Misal: Happy Birthday Ke-20 Sayang! 💖" oninput="updateLivePreview()" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-pink-400">
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1">Isi Pesan Ucapan Lengkap</label>
+              <textarea id="inputMessage" rows="4" placeholder="Tulis ungkapan perasaan, doa, dan kata-kata manismu di sini..." oninput="updateLivePreview()" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-pink-400"></textarea>
+            </div>
+
+            <!-- Image Upload & Frame Style -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1">Unggah Foto / Gambar</label>
+                <input type="file" id="inputImageFile" accept="image/*" onchange="handleImageFile(event)" class="hidden">
+                <button type="button" onclick="document.getElementById('inputImageFile').click()" class="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs flex items-center justify-center gap-2 border border-slate-300">
+                  <i data-lucide="image" class="w-4 h-4 text-pink-500"></i> <span id="imageFileName">Pilih File Foto</span>
+                </button>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1">Atau Gunakan URL Gambar</label>
+                <input type="text" id="inputImageUrl" placeholder="https://..." oninput="handleImageUrlInput()" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-pink-400">
+              </div>
+            </div>
+          </div>
+
+          <!-- STEP 4: THEMES & BACKGROUND PARTICLES -->
+          <div>
+            <label class="block font-heading text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
+              <span class="w-6 h-6 bg-pink-500 text-white rounded-full flex items-center justify-center text-xs">3</span>
+              Tema Visual & Efek Partikel 🎨
+            </label>
+            <div class="flex flex-wrap gap-3">
+              <button type="button" onclick="setTheme('pastel')" class="px-3 py-1.5 rounded-xl bg-pink-200 text-pink-800 text-xs font-bold border border-pink-300">Pastel Dream</button>
+              <button type="button" onclick="setTheme('coquette')" class="px-3 py-1.5 rounded-xl bg-rose-200 text-rose-800 text-xs font-bold border border-rose-300">Coquette Pink</button>
+              <button type="button" onclick="setTheme('sakura')" class="px-3 py-1.5 rounded-xl bg-red-100 text-red-800 text-xs font-bold border border-red-200">Sakura Blossom</button>
+              <button type="button" onclick="setTheme('cyber')" class="px-3 py-1.5 rounded-xl bg-purple-900 text-pink-300 text-xs font-bold border border-purple-700">Neon Cyber</button>
+              <button type="button" onclick="setTheme('retro')" class="px-3 py-1.5 rounded-xl bg-sky-200 text-slate-800 text-xs font-bold border border-sky-300">Retro Arcade</button>
+              <button type="button" onclick="setTheme('midnight')" class="px-3 py-1.5 rounded-xl bg-indigo-950 text-indigo-200 text-xs font-bold border border-indigo-800">Midnight Sky</button>
+            </div>
+          </div>
+
+          <!-- STEP 5: ADVANCED OPTIONS (Passcode & Countdown) -->
+          <div class="border-t border-slate-200/60 pt-4 space-y-3">
+            <span class="font-heading text-xs font-bold text-slate-600 flex items-center gap-1.5">
+              <i data-lucide="shield-check" class="w-4 h-4 text-emerald-500"></i> Fitur Proteksi Tambahan (Opsional)
+            </span>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-[11px] font-bold text-slate-600 mb-1">Proteksi PIN Kunci Kado</label>
+                <input type="password" id="inputPasscode" placeholder="Misal: 1234 (Kosongkan jika tidak)" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-pink-400">
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-slate-600 mb-1">Tanggal Kado Boleh Dibuka</label>
+                <input type="datetime-local" id="inputOpenDate" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-pink-400 text-slate-600">
+              </div>
+            </div>
+          </div>
+
+          <!-- GENERATE BUTTON -->
+          <div class="pt-2">
+            <button type="button" onclick="generateSurpriseLink()" class="w-full bg-gradient-to-r from-pink-500 via-rose-500 to-rose-400 hover:from-pink-600 hover:to-rose-600 text-white font-heading font-bold text-lg py-4 rounded-2xl shadow-xl hover:shadow-pink-400/50 transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2">
+              <i data-lucide="sparkles" class="w-5 h-5"></i> Dapatkan Link & QR Code Kado
+            </button>
+          </div>
+
+        </div>
+
+        <!-- RIGHT: REALTIME LIVE PREVIEW (5 Cols) -->
+        <div class="lg:col-span-5 sticky top-6 space-y-4">
+          <div class="glass-panel p-5 rounded-3xl">
+            <div class="flex items-center justify-between mb-4 border-b border-slate-200/60 pb-3">
+              <span class="font-heading text-xs font-bold text-slate-600 flex items-center gap-1.5">
+                <i data-lucide="eye" class="w-4 h-4 text-pink-500"></i> Live Preview Tampilan
+              </span>
+              <span class="text-[9px] font-extrabold bg-pink-100 text-pink-600 px-2 py-0.5 rounded-full uppercase">Realtime</span>
+            </div>
+
+            <!-- Card Frame Simulation -->
+            <div class="bg-white/90 rounded-2xl p-6 shadow-inner border border-slate-100 min-h-[360px] flex flex-col justify-between items-center text-center">
+              <div class="space-y-2 w-full">
+                <span id="prevTag" class="inline-block text-[10px] font-bold bg-pink-50 text-pink-600 px-3 py-1 rounded-full">
+                  Special Surprise
+                </span>
+                <h4 id="prevTitle" class="font-heading font-bold text-xl text-slate-800 break-words">Judul Momen Kamu</h4>
+                <p id="prevSender" class="text-xs text-slate-500">Dari: <span class="text-pink-600 font-bold">Pengirim</span></p>
+              </div>
+
+              <!-- Icon Dynamic Preview -->
+              <div class="my-6">
+                <div id="prevIcon" class="text-6xl animate-float">🎁</div>
+              </div>
+
+              <div class="w-full bg-pink-50/70 p-3 rounded-xl border border-pink-100/50">
+                <p id="prevMessage" class="text-xs text-slate-600 italic line-clamp-3">"Preview isi pesan ucapan kamu akan tampil di sini..."</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL: GENERATED SHARE LINK & QR CODE -->
+  <div id="shareModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="glass-panel bg-white p-6 sm:p-8 rounded-3xl shadow-2xl max-w-md w-full text-center space-y-5">
+      <div class="w-14 h-14 bg-pink-100 text-pink-500 rounded-full flex items-center justify-center mx-auto text-2xl">
+        🎉
+      </div>
+      <div>
+        <h3 class="font-heading text-2xl font-bold text-slate-800">Kado Siap Diberikan!</h3>
+        <p class="text-xs text-slate-500 mt-1">Salin link atau scan QR Code di bawah untuk membuka ucapan:</p>
+      </div>
+
+      <!-- QR CODE DISPLAY -->
+      <div class="flex justify-center my-2">
+        <div id="qrcodeCanvas" class="p-3 bg-white rounded-2xl shadow-md border border-slate-100"></div>
+      </div>
+
+      <!-- LINK INPUT -->
+      <div class="flex items-center gap-2 bg-slate-100 p-2 rounded-2xl border border-slate-200">
+        <input type="text" id="shareUrlInput" readonly class="bg-transparent text-xs text-slate-600 w-full px-2 focus:outline-none truncate font-mono">
+        <button onclick="copyGeneratedLink()" class="bg-pink-500 hover:bg-pink-600 text-white font-bold px-4 py-2 rounded-xl text-xs transition-all flex items-center gap-1 shrink-0 shadow">
+          <i data-lucide="copy" class="w-3.5 h-3.5"></i> Salin
+        </button>
+      </div>
+
+      <!-- ACTION BUTTONS -->
+      <div class="grid grid-cols-2 gap-3">
+        <button onclick="shareViaWhatsApp()" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2.5 rounded-xl text-xs transition-all flex items-center justify-center gap-1.5">
+          <i data-lucide="message-circle" class="w-4 h-4"></i> Kirim WhatsApp
+        </button>
+        <button onclick="testGeneratedLink()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2.5 rounded-xl text-xs transition-all">
+          Coba Buka Link
+        </button>
+      </div>
+
+      <button onclick="closeShareModal()" class="w-full text-xs font-bold text-slate-400 hover:text-slate-600 py-1">
+        Tutup
+      </button>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION SYSTEM -->
+  <div id="toast" class="fixed bottom-6 right-6 z-50 bg-slate-800 text-white text-xs font-bold px-4 py-3 rounded-2xl shadow-xl transition-all transform translate-y-20 opacity-0 flex items-center gap-2">
+    <i data-lucide="info" class="w-4 h-4 text-pink-400"></i>
+    <span id="toastMsg">Notifikasi</span>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="relative z-10 w-full py-4 text-center text-xs text-slate-500 font-semibold">
+    Giftie Studio Max &copy; 2026 - Ultimate Virtual Gift Experience
+  </footer>
+
+  <!-- MAIN APPLICATION LOGIC -->
+  <script>
+    // Global Application State
+    let currentGiftType = 'box';
+    let currentTheme = 'pastel';
+    let uploadedImageBase64 = '';
+    let youtubeVideoId = '';
+    let ytPlayer = null;
+    let isYtPlaying = false;
+    let recipientPayloadData = null;
+
+    // Initialize Lucide Icons & Page State on Load
+    window.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      initParticles('hearts');
+      checkURLHashState();
+    });
+
+    // YouTube Iframe Player API Ready Callback
+    function onYouTubeIframeAPIReady() {
+      // Player initialized dynamically when recipient opens
+    }
+
+    // Initialize Floating Background Particles
+    function initParticles(type) {
+      const container = document.getElementById('particleContainer');
+      container.innerHTML = '';
+      const symbols = type === 'sakura' ? ['🌸', '🌺'] : type === 'cyber' ? ['⚡', '✨'] : ['💖', '💕', '✨', '🌸'];
+      
+      for (let i = 0; i < 15; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        p.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+        p.style.left = Math.random() * 100 + '%';
+        p.style.fontSize = (Math.random() * 15 + 15) + 'px';
+        p.style.animationDuration = (Math.random() * 8 + 8) + 's';
+        p.style.animationDelay = (Math.random() * 5) + 's';
+        container.appendChild(p);
+      }
+    }
+
+    // Check Hash in URL for Recipient Mode
+    function checkURLHashState() {
+      const hash = window.location.hash;
+      if (hash && hash.startsWith('#gift=')) {
+        try {
+          const rawB64 = hash.replace('#gift=', '');
+          const jsonStr = decodeURIComponent(atob(rawB64));
+          recipientPayloadData = JSON.parse(jsonStr);
+
+          renderRecipientView(recipientPayloadData);
+        } catch (err) {
+          console.error('Failed to parse URL Payload:', err);
+          showToast('Tautan kado rusak atau tidak valid!');
+          renderCreatorView();
+        }
+      } else {
+        renderCreatorView();
+      }
+    }
+
+    // Switch View to Recipient Viewer
+    function renderRecipientView(data) {
+      document.getElementById('creatorSection').classList.add('hidden');
+      document.getElementById('recipientSection').classList.remove('hidden');
+      document.getElementById('recipientSection').classList.add('flex');
+      document.getElementById('navNewGiftBtn').classList.remove('hidden');
+
+      if (data.theme) setTheme(data.theme);
+
+      // Check Passcode Protection
+      if (data.passcode && data.passcode.trim() !== '') {
+        document.getElementById('passcodeLockScreen').classList.remove('hidden');
+        document.getElementById('surpriseMainContent').classList.add('hidden');
+        return;
+      }
+
+      // Check Countdown Timer
+      if (data.openDate) {
+        const targetTime = new Date(data.openDate).getTime();
+        const now = new Date().getTime();
+        if (targetTime > now) {
+          document.getElementById('countdownLockScreen').classList.remove('hidden');
+          document.getElementById('surpriseMainContent').classList.add('hidden');
+          startCountdownTimer(targetTime);
+          return;
+        }
+      }
+
+      showRecipientSurpriseContent(data);
+    }
+
+    // Display Actual Recipient Content
+    function showRecipientSurpriseContent(data) {
+      document.getElementById('passcodeLockScreen').classList.add('hidden');
+      document.getElementById('countdownLockScreen').classList.add('hidden');
+      document.getElementById('surpriseMainContent').classList.remove('hidden');
+
+      // Populate Text Elements
+      document.getElementById('viewOccasionTag').textContent = data.occasion || 'Special Surprise';
+      document.getElementById('viewTitle').textContent = data.title || 'Ada Kejutan Untukmu!';
+      document.getElementById('viewSender').innerHTML = `Dari: <span class="text-pink-600 font-bold">${data.sender || 'Seseorang'}</span>`;
+      
+      document.getElementById('msgRecipientTitle').textContent = `Untuk: ${data.recipient || 'Kamu'}`;
+      document.getElementById('msgBodyText').textContent = data.message || 'Semoga harimu menyenangkan!';
+      document.getElementById('msgSenderFooter').textContent = `Dari: ${data.sender || 'Sahabatmu'}`;
+
+      if (data.image) {
+        document.getElementById('msgPhoto').src = data.image;
+        document.getElementById('msgPhotoWrapper').classList.remove('hidden');
+        document.getElementById('polaroidDisplayImg').src = data.image;
+      }
+
+      // Hide all unboxing types
+      const types = ['Box', 'Letter', 'Cake', 'Scratch', 'Balloon', 'Polaroid'];
+      types.forEach(t => document.getElementById(`giftType${t}`).classList.add('hidden'));
+
+      // Show selected unboxing type
+      const activeType = data.type ? data.type.charAt(0).toUpperCase() + data.type.slice(1) : 'Box';
+      const targetElem = document.getElementById(`giftType${activeType}`);
+      if (targetElem) targetElem.classList.remove('hidden');
+
+      if (data.type === 'scratch') {
+        initScratchCanvas(data.message);
+      }
+
+      // Load YouTube Audio if URL provided
+      if (data.ytId) {
+        setupYouTubeAudioPlayer(data.ytId);
+      }
+    }
+
+    // Passcode Verification
+    function verifyPasscode() {
+      const attempt = document.getElementById('inputPasscodeAttempt').value.trim();
+      if (attempt === recipientPayloadData.passcode) {
+        showToast('PIN Benar! Membuka Kado... ✨');
+        showRecipientSurpriseContent(recipientPayloadData);
+      } else {
+        showToast('PIN Salah! Coba lagi.');
+      }
+    }
+
+    // Countdown Timer logic
+    function startCountdownTimer(targetTime) {
+      const display = document.getElementById('countdownTimerDisplay');
+      const timer = setInterval(() => {
+        const now = new Date().getTime();
+        const diff = targetTime - now;
+
+        if (diff <= 0) {
+          clearInterval(timer);
+          showRecipientSurpriseContent(recipientPayloadData);
+          return;
+        }
+
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+        display.textContent = `${days}d : ${hours}h : ${minutes}m : ${seconds}s`;
+      }, 1000);
+    }
+
+    // Switch View to Creator Studio
+    function renderCreatorView() {
+      document.getElementById('recipientSection').classList.add('hidden');
+      document.getElementById('creatorSection').classList.remove('hidden');
+      updateLivePreview();
+    }
+
+    // Gift Type Selector in Creator
+    function setGiftType(type) {
+      currentGiftType = type;
+      document.querySelectorAll('.type-select-btn').forEach(b => {
+        b.classList.remove('border-pink-400', 'bg-pink-50/50');
+        b.classList.add('border-slate-200');
+      });
+
+      const iconMap = { box: '🎁', letter: '💌', cake: '🎂', scratch: '🎟️', balloon: '🎈', polaroid: '📸' };
+      document.getElementById('prevIcon').textContent = iconMap[type];
+
+      const activeBtn = document.getElementById(`btnType${type}`);
+      if (activeBtn) {
+        activeBtn.classList.add('border-pink-400', 'bg-pink-50/50');
+        activeBtn.classList.remove('border-slate-200');
+      }
+    }
+
+    // Theme Switcher Logic
+    function setTheme(theme) {
+      currentTheme = theme;
+      const body = document.getElementById('appBody');
+      body.className = `min-h-screen relative flex flex-col justify-between transition-colors duration-500 theme-${theme}`;
+      initParticles(theme);
+    }
+
+    // Extract YouTube Video ID from any URL format
+    function processYTUrl() {
+      const url = document.getElementById('inputYTUrl').value.trim();
+      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+      const match = url.match(regExp);
+
+      if (match && match[2].length === 11) {
+        youtubeVideoId = match[2];
+        showToast('Lagu YouTube Berhasil Dihubungkan! 🎵');
+      } else if (url !== '') {
+        showToast('Format URL YouTube tidak valid!');
+      }
+    }
+
+    // YouTube Audio Player Handler
+    function setupYouTubeAudioPlayer(vidId) {
+      document.getElementById('ytAudioPlayerWidget').classList.remove('hidden');
+      
+      ytPlayer = new YT.Player('youtube-player', {
+        height: '0',
+        width: '0',
+        videoId: vidId,
+        playerVars: { 'autoplay': 1, 'loop': 1, 'playlist': vidId },
+        events: {
+          'onReady': (e) => {
+            e.target.setVolume(80);
+            e.target.playVideo();
+            isYtPlaying = true;
+            document.getElementById('ytStatus').textContent = 'Memutar Musik';
+          }
+        }
+      });
+    }
+
+    function toggleYTAudio() {
+      if (!ytPlayer) return;
+      if (isYtPlaying) {
+        ytPlayer.pauseVideo();
+        isYtPlaying = false;
+        document.getElementById('ytStatus').textContent = 'Di-pause';
+      } else {
+        ytPlayer.playVideo();
+        isYtPlaying = true;
+        document.getElementById('ytStatus').textContent = 'Memutar Musik';
+      }
+    }
+
+    function changeYTVolume(val) {
+      if (ytPlayer && ytPlayer.setVolume) {
+        ytPlayer.setVolume(val);
+      }
+    }
+
+    // Handle Image Upload File
+    function handleImageFile(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      if (file.size > 1.5 * 1024 * 1024) {
+        showToast('Ukuran foto maksimal 1.5MB!');
+        return;
+      }
+
+      document.getElementById('imageFileName').textContent = file.name;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        uploadedImageBase64 = evt.target.result;
+        showToast('Foto berhasil dimuat!');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function handleImageUrlInput() {
+      const url = document.getElementById('inputImageUrl').value.trim();
+      if (url) uploadedImageBase64 = url;
+    }
+
+    // Update Realtime Live Preview
+    function updateLivePreview() {
+      const recipient = document.getElementById('inputRecipient').value.trim();
+      const sender = document.getElementById('inputSender').value.trim();
+      const occasion = document.getElementById('inputOccasion').value.trim();
+      const message = document.getElementById('inputMessage').value.trim();
+
+      document.getElementById('prevTitle').textContent = occasion || 'Judul Momen Kamu';
+      document.getElementById('prevSender').innerHTML = `Dari: <span class="text-pink-600 font-bold">${sender || 'Pengirim'}</span>`;
+      document.getElementById('prevMessage').textContent = message ? `"${message}"` : '"Preview isi pesan ucapan kamu akan tampil di sini..."';
+      document.getElementById('prevTag').textContent = recipient ? `Untuk: ${recipient}` : 'Special Surprise';
+    }
+
+    // Generate Encoded Hash Share Link & QR Code
+    function generateSurpriseLink() {
+      const recipient = document.getElementById('inputRecipient').value.trim();
+      const sender = document.getElementById('inputSender').value.trim();
+      const occasion = document.getElementById('inputOccasion').value.trim();
+      const message = document.getElementById('inputMessage').value.trim();
+      const passcode = document.getElementById('inputPasscode').value.trim();
+      const openDate = document.getElementById('inputOpenDate').value;
+
+      if (!message) {
+        showToast('Mohon isi pesan ucapan terlebih dahulu!');
+        return;
+      }
+
+      const payload = {
+        type: currentGiftType,
+        theme: currentTheme,
+        recipient: recipient || 'Kamu',
+        sender: sender || 'Sahabatmu',
+        occasion: occasion || 'Special Surprise!',
+        message: message,
+        image: uploadedImageBase64 || '',
+        ytId: youtubeVideoId || '',
+        passcode: passcode || '',
+        openDate: openDate || ''
+      };
+
+      const jsonStr = JSON.stringify(payload);
+      const b64Data = btoa(encodeURIComponent(jsonStr));
+      const shareUrl = `${window.location.origin}${window.location.pathname}#gift=${b64Data}`;
+
+      document.getElementById('shareUrlInput').value = shareUrl;
+
+      // Generate QR Code
+      const qrContainer = document.getElementById('qrcodeCanvas');
+      qrContainer.innerHTML = '';
+      new QRCode(qrContainer, {
+        text: shareUrl,
+        width: 140,
+        height: 140,
+        colorDark: "#db2777",
+        colorLight: "#ffffff"
+      });
+
+      document.getElementById('shareModal').classList.remove('hidden');
+    }
+
+    function closeShareModal() {
+      document.getElementById('shareModal').classList.add('hidden');
+    }
+
+    function copyGeneratedLink() {
+      const input = document.getElementById('shareUrlInput');
+      input.select();
+      document.execCommand('copy');
+      showToast('Tautan Kado Berhasil Disalin! 📋');
+    }
+
+    function shareViaWhatsApp() {
+      const url = document.getElementById('shareUrlInput').value;
+      const text = `Hai! Ada kado ucapan virtual spesial untukmu nih ✨ Buka di sini: ${url}`;
+      window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
+    }
+
+    function testGeneratedLink() {
+      const url = document.getElementById('shareUrlInput').value;
+      window.location.href = url;
+      window.location.reload();
+    }
+
+    function goHome() {
+      window.location.hash = '';
+      renderCreatorView();
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastMsg').textContent = msg;
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 3000);
+    }
+
+    // ==================== UNBOXING REVEAL ACTIONS ====================
+
+    function triggerConfettiEffect() {
+      if (typeof confetti === 'function') {
+        confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
+      }
+    }
+
+    function revealFinalMessage() {
+      triggerConfettiEffect();
+      const modal = document.getElementById('finalMessageModal');
+      modal.classList.remove('hidden');
+      setTimeout(() => {
+        modal.classList.remove('scale-90', 'opacity-0');
+        modal.classList.add('scale-100', 'opacity-100');
+        modal.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    }
+
+    // 1. Box Unboxing
+    function openGiftBox() {
+      const wrapper = document.getElementById('giftTypeBox');
+      wrapper.classList.add('opened');
+      setTimeout(() => {
+        wrapper.classList.add('hidden');
+        revealFinalMessage();
+      }, 700);
+    }
+
+    // 2. Wax Envelope Unboxing
+    function openWaxEnvelope() {
+      const env = document.getElementById('envelopeWrapper');
+      env.classList.add('open');
+      setTimeout(() => {
+        revealFinalMessage();
+      }, 900);
+    }
+
+    // 3. Candle Blow Manual & Mic
+    function blowCandleManual() {
+      const flame = document.getElementById('cakeFlame');
+      flame.style.opacity = '0';
+      flame.style.transition = 'opacity 0.6s ease';
+      showToast('Lilin Berhasil Ditiup! ✨ Make a Wish!');
+      setTimeout(() => {
+        revealFinalMessage();
+      }, 600);
+    }
+
+    function enableMicBlow() {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        showToast('Mikrofon tidak didukung di browser ini.');
+        return;
+      }
+      showToast('Tiup ke mikrofon HP kamu sekarang! 🎤');
+      navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const mic = audioCtx.createMediaStreamSource(stream);
+        const analyser = audioCtx.createAnalyser();
+        mic.connect(analyser);
+        analyser.fftSize = 256;
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+        const checkAudio = () => {
+          analyser.getByteFrequencyData(dataArray);
+          let sum = dataArray.reduce((a, b) => a + b, 0);
+          let average = sum / dataArray.length;
+          if (average > 50) { // Blow threshold detected
+            stream.getTracks().forEach(t => t.stop());
+            blowCandleManual();
+          } else {
+            requestAnimationFrame(checkAudio);
+          }
+        };
+        checkAudio();
+      }).catch(err => {
+        showToast('Izin mikrofon ditolak.');
+      });
+    }
+
+    // 4. Scratch Canvas Handler
+    function initScratchCanvas(text) {
+      document.getElementById('scratchRevealedText').textContent = text;
+      const canvas = document.getElementById('scratchCanvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+
+      ctx.fillStyle = '#cbd5e1';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#475569';
+      ctx.font = 'bold 16px Plus Jakarta Sans';
+      ctx.textAlign = 'center';
+      ctx.fillText('✨ GOSOK LAYAR DI SINI ✨', canvas.width / 2, canvas.height / 2);
+
+      let scratching = false;
+      function scratch(e) {
+        if (!scratching) return;
+        const rect = canvas.getBoundingClientRect();
+        const x = (e.clientX || (e.touches && e.touches[0].clientX)) - rect.left;
+        const y = (e.clientY || (e.touches && e.touches[0].clientY)) - rect.top;
+
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.beginPath();
+        ctx.arc(x, y, 28, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Check clear ratio
+        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        let clear = 0;
+        for (let i = 3; i < imgData.data.length; i += 4) {
+          if (imgData.data[i] === 0) clear++;
+        }
+        if ((clear / (canvas.width * canvas.height)) > 0.4) {
+          canvas.style.opacity = '0';
+          canvas.style.transition = 'opacity 0.5s ease';
+          setTimeout(() => revealFinalMessage(), 400);
+        }
+      }
+
+      canvas.addEventListener('mousedown', () => scratching = true);
+      canvas.addEventListener('mouseup', () => scratching = false);
+      canvas.addEventListener('mousemove', scratch);
+      canvas.addEventListener('touchstart', () => scratching = true);
+      canvas.addEventListener('touchend', () => scratching = false);
+      canvas.addEventListener('touchmove', scratch);
+    }
+
+    // 5. Balloon Pop Game
+    let poppedCount = 0;
+    function popBalloon(elem) {
+      elem.style.transform = 'scale(1.5)';
+      elem.style.opacity = '0';
+      elem.style.pointerEvents = 'none';
+      poppedCount++;
+
+      if (poppedCount >= 3) {
+        setTimeout(() => revealFinalMessage(), 400);
+      }
+    }
+  </script>
+</body>
+</html>
